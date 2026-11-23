@@ -209,3 +209,110 @@ def verificar_parametros_urbanisticos(
         })
 
     return hallazgos
+
+
+def calcular_cesiones_urbanisticas(
+    area_bruta_m2: float,
+    retiros_y_vias_obligadas_m2: float,
+    pct_cesion_espacio_publico: float = 17.0,
+    pct_cesion_equipamiento: float = 3.0,
+    area_vias_locales_m2: float = 0.0,
+    area_cesion_entregada_sitio_m2: float = None,
+    valor_comercial_m2_urbanizado: float = 0.0
+) -> dict:
+    """
+    Calcula las cesiones urbanísticas obligatorias conforme a Ley 388/1997,
+    Acuerdo 012/2017 (PBOT) y Decreto 152/2018:
+    - Área Neta Urbanizable (AN) = Área Bruta - Afectaciones (retiros hídricos, riesgo, vías obligadas PBOT)
+    - Cesión Espacio Público (Tipo A Verde/Parques) = AN * (% / 100)
+    - Cesión Equipamientos Colectivos = AN * (% / 100)
+    - Área Útil Vendible = AN - Cesión Espacio Público - Cesión Equipamientos - Vías Locales
+    - Compensación en dinero (si se entrega menos área en sitio)
+    """
+    area_neta = max(0.0, area_bruta_m2 - retiros_y_vias_obligadas_m2)
+    cesion_ep_m2 = round(area_neta * (pct_cesion_espacio_publico / 100.0), 2)
+    cesion_eq_m2 = round(area_neta * (pct_cesion_equipamiento / 100.0), 2)
+    total_cesion_tipo_a_m2 = round(cesion_ep_m2 + cesion_eq_m2, 2)
+    area_util_m2 = max(0.0, round(area_neta - total_cesion_tipo_a_m2 - area_vias_locales_m2, 2))
+
+    globo_minimo_50_m2 = round(cesion_ep_m2 * 0.50, 2)
+
+    if area_cesion_entregada_sitio_m2 is None:
+        area_cesion_entregada_sitio_m2 = total_cesion_tipo_a_m2
+
+    faltante_m2 = max(0.0, round(total_cesion_tipo_a_m2 - area_cesion_entregada_sitio_m2, 2))
+    valor_compensacion = aproximar_milaje_superior(faltante_m2 * valor_comercial_m2_urbanizado) if faltante_m2 > 0 else 0
+
+    return {
+        "area_bruta_m2": round(area_bruta_m2, 2),
+        "descuentos_afectaciones_m2": round(retiros_y_vias_obligadas_m2, 2),
+        "area_neta_urbanizable_m2": round(area_neta, 2),
+        "pct_espacio_publico": pct_cesion_espacio_publico,
+        "cesion_espacio_publico_m2": cesion_ep_m2,
+        "globo_minimo_concentrado_50pct_m2": globo_minimo_50_m2,
+        "pct_equipamiento": pct_cesion_equipamiento,
+        "cesion_equipamiento_m2": cesion_eq_m2,
+        "total_cesion_tipo_a_obligatoria_m2": total_cesion_tipo_a_m2,
+        "cesion_vias_locales_m2": round(area_vias_locales_m2, 2),
+        "area_util_resultante_m2": area_util_m2,
+        "area_entregada_en_sitio_m2": round(area_cesion_entregada_sitio_m2, 2),
+        "area_faltante_a_compensar_m2": faltante_m2,
+        "valor_compensacion_dinero": valor_compensacion
+    }
+
+def calcular_plusvalia_urbanistica(
+    hecho_generador: str,
+    area_neta_beneficiada_m2: float,
+    valor_m2_antes_v1: float,
+    valor_m2_despues_v2: float,
+    pct_participacion_municipal: float = 30.0,
+    pct_mayor_aprovechamiento: float = 0.0,
+    indice_construccion_base: float = 1.0,
+    indice_construccion_nuevo: float = 1.0,
+    incidencia_suelo_pct: float = 20.0
+) -> dict:
+    """
+    Calcula el Efecto Plusvalía y la Participación en Plusvalía (Ley 388 de 1997 Arts. 73-90,
+    Decreto 1077 de 2015, Acuerdo 012 de 2017 PBOT y Acuerdo 019 de 2020):
+    Soporta dos métodos complementarios según la información disponible:
+    1) Diferencial directo de avalúo comercial (V2 - V1) por m² de suelo beneficiado.
+    2) Cálculo por porcentaje de mayor aprovechamiento (%) o incremento en Índice de Construcción
+       aplicado sobre el valor del suelo / incidencia de edificabilidad adicional.
+    """
+    delta_v_m2 = max(0.0, valor_m2_despues_v2 - valor_m2_antes_v1)
+
+    # Si el usuario selecciona un porcentaje de mayor aprovechamiento adicional o incremento de IC
+    m2_base_construibles = area_neta_beneficiada_m2 * indice_construccion_base
+    m2_nuevos_construibles = area_neta_beneficiada_m2 * indice_construccion_nuevo
+    delta_m2_ic = max(0.0, m2_nuevos_construibles - m2_base_construibles)
+
+    # Factor adicional por porcentaje de mayor aprovechamiento seleccionado en menú desplegable
+    efecto_por_avaluos = delta_v_m2 * area_neta_beneficiada_m2
+
+    # Si V2 == V1 pero se ingresó un % de mayor aprovechamiento o incremento de IC, estimar mayor valor generado
+    efecto_por_mayor_aprovechamiento = 0.0
+    if pct_mayor_aprovechamiento > 0:
+        efecto_por_mayor_aprovechamiento = (valor_m2_antes_v1 * (pct_mayor_aprovechamiento / 100.0)) * area_neta_beneficiada_m2
+    elif delta_m2_ic > 0 and delta_v_m2 == 0:
+        # Valorización por m² adicional edificable según incidencia del suelo
+        efecto_por_mayor_aprovechamiento = delta_m2_ic * (valor_m2_antes_v1 / max(indice_construccion_base, 0.1))
+
+    efecto_plusvalia_total = round(efecto_por_avaluos + efecto_por_mayor_aprovechamiento, 2)
+    participacion_exacta = efecto_plusvalia_total * (pct_participacion_municipal / 100.0)
+    participacion_pagar = aproximar_milaje_superior(participacion_exacta)
+
+    return {
+        "hecho_generador": hecho_generador,
+        "norma_aplicable": "Ley 388 de 1997 (Arts. 73-90) / Decreto 1077 de 2015 / Acuerdo 012 de 2017 / Acuerdo 019 de 2020",
+        "area_neta_beneficiada_m2": round(area_neta_beneficiada_m2, 2),
+        "valor_comercial_antes_v1_m2": round(valor_m2_antes_v1, 2),
+        "valor_comercial_despues_v2_m2": round(valor_m2_despues_v2, 2),
+        "incremento_precio_suelo_delta_v_m2": round(delta_v_m2, 2),
+        "pct_mayor_aprovechamiento_aplicado": pct_mayor_aprovechamiento,
+        "ic_base": indice_construccion_base,
+        "ic_nuevo": indice_construccion_nuevo,
+        "m2_adicionales_por_ic": round(delta_m2_ic, 2),
+        "efecto_plusvalia_total": efecto_plusvalia_total,
+        "tarifa_participacion_municipal_pct": pct_participacion_municipal,
+        "participacion_plusvalia_pagar": participacion_pagar
+    }
