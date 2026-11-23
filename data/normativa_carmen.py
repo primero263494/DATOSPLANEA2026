@@ -339,3 +339,105 @@ CHECKLIST_TRAMITES = {
         ]
     }
 }
+
+
+CESIONES_URBANISTICAS_PBOT = [
+    {
+        "tipo": "Cesión Tipo A - Espacio Público (Zonas Verdes, Parques, Plazas y Plazoletas)",
+        "ambito": "Suelo Urbano y Suelo de Expansión Urbana (Desarrollo / Urbanización)",
+        "norma": "Ley 388 de 1997 (Art. 37) / Decreto 1077 de 2015 / Acuerdo 012 de 2017 (PBOT) / Decreto 152 de 2018",
+        "porcentaje_referencia": "15% a 20% del Área Neta Urbanizable (AN) (mínimo 17% estándar en desarrollos residenciales; mínimo 15% en usos industriales/comerciales según polígono)",
+        "formula": "Cesión Espacio Público (m²) = Área Neta Urbanizable (AN) × % Cesión Tipo A",
+        "criterios_calculo": (
+            "1. Se parte del Área Bruta del predio (AB).\n"
+            "2. Se descuentan las afectaciones no computables para obtener el Área Neta Urbanizable (AN = AB - Retiros hídricos/EEP - Zonas de amenaza/riesgo alto - Vías arterias/colectoras obligadas del plan vial PBOT).\n"
+            "3. Sobre el AN se aplica el porcentaje de cesión pública gratuita.\n"
+            "4. Mínimo el 50% de la cesión verde debe concentrarse en un solo globo de terreno con frente directo sobre vía pública vehicular o peatonal aprobada, pendiente <= 25% y sin ubicarse en zonas de riesgo o retiros de quebrada."
+        )
+    },
+    {
+        "tipo": "Cesión Tipo A - Equipamientos Colectivos (Educación, Salud, Cultura, Recreación, Bienestar)",
+        "ambito": "Suelo Urbano y Suelo de Expansión Urbana (Urbanización / Planes Parciales)",
+        "norma": "Acuerdo 012 de 2017 (PBOT) / Decreto 152 de 2018",
+        "porcentaje_referencia": "3% a 5% del Área Neta Urbanizable (AN) (complementario a espacio público según densidad habitacional o número de viviendas)",
+        "formula": "Cesión Equipamiento (m²) = Área Neta Urbanizable (AN) × % Cesión Equipamiento",
+        "criterios_calculo": (
+            "1. En proyectos de vivienda multifamiliar o urbanizaciones de alta densidad se exige suelo útil urbanizado para equipamiento comunal público o institucional.\n"
+            "2. Puede entregarse en sitio (globo habilitado con servicios públicos) o compensarse/trasladarse a bancos de tierras o proyectos estratégicos municipales cuando el área resultante sea inferior a la unidad mínima funcional, previo concepto de la Secretaría de Planeación."
+        )
+    },
+    {
+        "tipo": "Cesión Vial Local (Vías Vehiculares Locales, Peatonales y Andenes Públicos)",
+        "ambito": "Urbanización y Parcelación",
+        "norma": "Decreto 152 de 2018 (Arts. 11-23) / Acuerdo 012 de 2017",
+        "porcentaje_referencia": "Según diseño geométrico vial aprobado (usualmente entre 12% y 22% del AN, adicional a espacio público y equipamiento)",
+        "formula": "Cesión Vial Local (m²) = Sumatoria de áreas de calzadas, andenes (mín. 1,20 m), zonas verdes viales y bahías/retornos",
+        "criterios_calculo": (
+            "1. Toda vía local nueva que dé acceso a lotes o etapas del proyecto debe cederse gratuitamente al Municipio completamente construida y dotada de redes.\n"
+            "2. Las vías sin salida no pueden superar 80 m y deben rematar en glorieta de 16 m de diámetro o retorno en T/L de 9 m × 18 m.\n"
+            "3. Las cesiones viales locales NO reemplazan ni se descuentan del porcentaje de cesión de zonas verdes y espacio público."
+        )
+    },
+    {
+        "tipo": "Cesiones en Parcelaciones Rurales y Suburbanas (Vivienda Campestre / Corredores)",
+        "ambito": "Suelo Rural y Suelo Suburbano (Polígonos Suburbanos y Centros Poblados)",
+        "norma": "Decreto 1077 de 2015 (Art. 2.2.2.2.4.1 y ss.) / Acuerdo 012 de 2017 (PBOT)",
+        "porcentaje_referencia": "15% a 20% del Área Neta Parcelable (según polígono suburbano o centro poblado en PBOT) + vías internas de acceso",
+        "formula": "Cesión Parcelación (m²) = (Área Bruta - Retiros Hídricos/Bosques/Pendientes > 75% - Vías Obligadas) × % Cesión Rural/Suburbana",
+        "criterios_calculo": (
+            "1. En suelo rural suburbano y centros poblados rurales se descuenta primero la Estructura Ecológica Principal (retiros de quebradas Cornare 251/2011, bosques naturales, pendientes > 75%).\n"
+            "2. Sobre el Área Neta Parcelable se aplica el porcentaje de cesión obligatoria para espacio público y equipamiento rural.\n"
+            "3. Las vías internas privadas de copropiedad no computan como cesión pública gratuita al Municipio."
+        )
+    },
+    {
+        "tipo": "Equipamiento Comunal Privado (Copropiedades / Propiedad Horizontal)",
+        "ambito": "Conjuntos Residenciales, Comerciales o Mixtos en Propiedad Horizontal",
+        "norma": "Ley 675 de 2001 / Acuerdo 012 de 2017 / Decreto 152 de 2018",
+        "porcentaje_referencia": "10 a 15 m² por cada 80 m² de área construida residencial (o 10% a 15% del área neta privada según tipología)",
+        "formula": "Equipamiento Comunal Privado (m²) = (Área Construida Residencial / 80) × m² exigidos por unidad",
+        "criterios_calculo": (
+            "1. Es independiente y adicional a las cesiones públicas gratuitas al Municipio.\n"
+            "2. Incluye zonas verdes privadas, salón social, portería, juegos infantiles y circulaciones recreativas internas (no incluye parqueaderos ni vías vehiculares internas)."
+        )
+    },
+    {
+        "tipo": "Compensación Urbanística en Dinero o Traslado de Cesiones",
+        "ambito": "Predios donde por tamaño o localización no es viable el globo de cesión en sitio",
+        "norma": "Ley 388 de 1997 / Decreto 1077 de 2015 / Acuerdo 012 de 2017 / Decreto 001 de 2026",
+        "porcentaje_referencia": "100% del área de cesión faltante valorada a avalúo comercial IGAC / Lonja del m² urbanizado",
+        "formula": "Valor Compensación ($) = Área de Cesión Faltante (m²) × Valor Comercial m² Urbanizado ($/m²)",
+        "criterios_calculo": (
+            "1. Procede únicamente cuando el área resultante de cesión sea menor al mínimo funcional o cuando el PBOT autorice traslado a zonas deficitarias de espacio público.\n"
+            "2. El valor resultante ingresa al Fondo de Compensaciones Urbanísticas y Espacio Público del Municipio con destinación específica."
+        )
+    }
+]
+
+PLUSVALIA_Y_APROVECHAMIENTOS_NORMA = {
+    "fundamento_legal": "Ley 388 de 1997 (Arts. 73 a 90), Decreto 1077 de 2015, Acuerdo 012 de 2017 (PBOT El Carmen de Viboral) y Acuerdo Municipal 019 de 2020 (Estatuto Tributario Municipal).",
+    "hechos_generadores": [
+        {
+            "codigo": "HG-1",
+            "nombre": "Incorporación de suelo rural a suelo de expansión urbana o clasificación de parte del suelo rural como suburbano",
+            "descripcion": "Cuando el PBOT o su revisión incorpora terrenos rurales a expansión urbana o delimita polígonos suburbanos."
+        },
+        {
+            "codigo": "HG-2",
+            "nombre": "Establecimiento o modificación del régimen o la zonificación de usos del suelo",
+            "descripcion": "Cambio hacia un uso más rentable (por ejemplo, de residencial a comercial/servicios, industrial o mixto de mayor aprovechamiento)."
+        },
+        {
+            "codigo": "HG-3",
+            "nombre": "Autorización de un mayor aprovechamiento del suelo en edificación (Índice de Ocupación, Índice de Construcción o Altura)",
+            "descripcion": "Incremento en la edificabilidad permitida (m² adicionales construibles o pisos adicionales respecto a la norma base o mediante venta/adquisición de derechos adicionales de construcción y desarrollo)."
+        }
+    ],
+    "tarifa_participacion_municipal": "Entre el 30% y el 50% del mayor valor por metro cuadrado generado por la acción urbanística (Art. 79 Ley 388 de 1997; tarifa estándar adoptada en el Municipio: 30% a 40% según hecho generador y acuerdo municipal vigente).",
+    "formulas": [
+        "1. Efecto Plusvalía por m² (ΔV) = Valor Comercial por m² después de la acción urbanística (V2) − Valor Comercial por m² antes de la acción urbanística (V1)",
+        "2. Mayor Aprovechamiento en Edificación (Δm² construibles) = Área Neta Urbanizable × (IC Nuevo − IC Base)",
+        "3. Efecto Plusvalía Total ($) = ΔV ($/m²) × Área Neta Beneficiada (m²) [o Incidencia del suelo sobre m² adicionales de construcción]",
+        "4. Participación en Plusvalía a Pagar ($) = Efecto Plusvalía Total ($) × Tarifa de Participación Municipal (%)"
+    ]
+}
