@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-SISTEMA INTEGRAL DE CONSULTA NORMATIVA, LIQUIDACIÓN, REVISIÓN Y EXPEDIENTES URBANÍSTICOS
+SISTEMA INTEGRAL DE CONSULTA NORMATIVA, LIQUIDACIÓN, REVISIÓN, CARTOGRAFÍA Y EXPEDIENTES URBANÍSTICOS
 Municipio de El Carmen de Viboral (Antioquia)
-Ejecutar con: streamlit run app_planeacion.py
+Ejecutar con: py -3 -m streamlit run app_planeacion.py
 """
 
-import json
 import streamlit as st
 from data.normativa_carmen import (
     PARAMETROS_2026,
@@ -21,6 +20,7 @@ from core.calculos import (
     calcular_subdivision_o_reloteo,
     verificar_parametros_urbanisticos
 )
+from core.cartografia import analizar_geojson_proyecto
 from core.gestor_expedientes import (
     inicializar_bd,
     crear_o_actualizar_expediente,
@@ -51,13 +51,11 @@ menu = st.sidebar.radio(
         "2. Calculadora de Licencias y Tributos",
         "3. Verificación Técnica de Planos",
         "4. Gestión de Expedientes, Chequeo y Carga",
-        "5. Generación de Informes Oficiales"
+        "5. Generación de Informes Oficiales",
+        "6. Análisis Cartográfico (GeoJSON / Capas)"
     ]
 )
 
-# -------------------------------------------------------------------------
-# MÓDULO 1: CONSULTA NORMATIVA Y TARIFARIA
-# -------------------------------------------------------------------------
 if menu == "1. Consulta Normativa y Tarifaria":
     st.header("📚 Buscador de Norma Local (PBOT / Decreto 152/2018) y Nacional")
     termino = st.text_input("Buscar por palabra clave (ej. ochava, andén, Cimarronas, ICANH, pendiente, tarifa, rural):")
@@ -95,9 +93,6 @@ if menu == "1. Consulta Normativa y Tarifaria":
                 })
         st.dataframe(filas_otras, use_container_width=True)
 
-# -------------------------------------------------------------------------
-# MÓDULO 2: CALCULADORA DE LICENCIAS Y TRIBUTOS
-# -------------------------------------------------------------------------
 elif menu == "2. Calculadora de Licencias y Tributos":
     st.header("🧮 Liquidación de Impuesto de Delineación y Derechos Urbanísticos (2026)")
 
@@ -165,9 +160,6 @@ elif menu == "2. Calculadora de Licencias y Tributos":
         total_act = sum(OTRAS_ACTUACIONES_2026[a]["valor_ajustado"] for a in actuaciones_sel)
         st.success(f"### Total Actuaciones Seleccionadas: ${total_act:,.0f} COP")
 
-# -------------------------------------------------------------------------
-# MÓDULO 3: VERIFICACIÓN TÉCNICA DE PLANOS
-# -------------------------------------------------------------------------
 elif menu == "3. Verificación Técnica de Planos":
     st.header("📐 Chequeo Geométrico y Normativo de Planos (PBOT / Decreto 152 de 2018)")
     c1, c2, c3 = st.columns(3)
@@ -201,9 +193,6 @@ elif menu == "3. Verificación Técnica de Planos":
         else:
             st.info(f"ℹ️ **{h['parametro']}**: {h['detalle']}")
 
-# -------------------------------------------------------------------------
-# MÓDULO 4: GESTIÓN DE EXPEDIENTES, LISTA DE CHEQUEO Y CARGA DE DOCUMENTOS
-# -------------------------------------------------------------------------
 elif menu == "4. Gestión de Expedientes, Chequeo y Carga":
     st.header("🗂️ Radicación, Lista de Chequeo y Repositorio Digital del Trámite")
 
@@ -278,7 +267,7 @@ elif menu == "4. Gestión de Expedientes, Chequeo y Carga":
             "07_Liquidacion_y_Comprobante_Pago"
         ]
     )
-    archivo_subido = st.file_uploader("Seleccione archivo (PDF, DWG, ZIP, JPG, PNG, DOC):", type=["pdf", "dwg", "zip", "jpg", "jpeg", "png", "doc", "docx"])
+    archivo_subido = st.file_uploader("Seleccione archivo (PDF, DWG, GEOJSON, JSON, ZIP, JPG, PNG, DOC):", type=["pdf", "dwg", "geojson", "json", "zip", "jpg", "jpeg", "png", "doc", "docx"])
     nota_doc = st.text_input("Nota del documento (ej. Versión corregida tras acta de observaciones):")
 
     if st.button("📤 Subir Archivo al Expediente"):
@@ -294,9 +283,6 @@ elif menu == "4. Gestión de Expedientes, Chequeo y Carga":
             st.write("**Archivos cargados actualmente en este radicado:**")
             st.dataframe(docs_actuales, use_container_width=True)
 
-# -------------------------------------------------------------------------
-# MÓDULO 5: GENERACIÓN DE INFORMES OFICIALES
-# -------------------------------------------------------------------------
 elif menu == "5. Generación de Informes Oficiales":
     st.header("📄 Generación de Acta de Observaciones / Concepto Técnico Oficial")
     expedientes = listar_expedientes()
@@ -317,3 +303,53 @@ elif menu == "5. Generación de Informes Oficiales":
             file_name=f"Informe_Tecnico_{exp_sel['radicado']}.md",
             mime="text/markdown"
         )
+
+elif menu == "6. Análisis Cartográfico (GeoJSON / Capas)":
+    st.header("🗺️ Análisis Cartográfico de Predios, Vías y Capas de Referencia")
+    st.caption("Cargue un archivo GeoJSON del proyecto (polígono de predio/lote o línea/polígono de vía) y, si desea, una capa GeoJSON de referencia (retiros, polígonos PBOT, amenazas o restricciones).")
+
+    c_up1, c_up2 = st.columns(2)
+    with c_up1:
+        geo_proyecto = st.file_uploader("1. Archivo GeoJSON del Proyecto (.geojson / .json):", type=["geojson", "json"])
+    with c_up2:
+        geo_referencia = st.file_uploader("2. Capa GeoJSON de Referencia / Restricción (opcional):", type=["geojson", "json"])
+
+    if geo_proyecto is not None:
+        try:
+            resultado_geo = analizar_geojson_proyecto(
+                geo_proyecto.getvalue(),
+                geo_referencia.getvalue() if geo_referencia is not None else None
+            )
+
+            m1, m2, m3 = st.columns(3)
+            m1.metric("Elementos Cartográficos", resultado_geo["num_elementos"])
+            m2.metric("Área Polígonos (m²)", f"{resultado_geo['area_total_m2']:,.2f}")
+            m3.metric("Longitud Líneas (m)", f"{resultado_geo['longitud_total_m']:,.2f}")
+
+            if resultado_geo["coordenadas_mapa"]:
+                st.subheader("📍 Visualización en Mapa")
+                st.map(resultado_geo["coordenadas_mapa"])
+
+            st.subheader("📐 Detalle por Elemento")
+            st.dataframe(resultado_geo["elementos"], use_container_width=True)
+
+            if resultado_geo["reglas_aplicables"]:
+                st.subheader("⚖️ Alertas Normativas por Área / Magnitud")
+                for rg in resultado_geo["reglas_aplicables"]:
+                    if rg["nivel"] == "ALERTA":
+                        st.warning(rg["regla"])
+                    else:
+                        st.info(rg["regla"])
+
+            if geo_referencia is not None:
+                st.subheader("🔎 Resultado de Cruce con Capa de Referencia")
+                if resultado_geo["intersecciones_capa_referencia"]:
+                    for inter in resultado_geo["intersecciones_capa_referencia"]:
+                        st.error(f"⚠️ {inter['detalle']}")
+                else:
+                    st.success("✅ Ningún vértice del proyecto cae dentro de los polígonos de la capa de referencia cargada.")
+
+        except Exception as e:
+            st.error(f"No se pudo procesar el archivo GeoJSON: {e}")
+    else:
+        st.info("Sube un archivo `.geojson` o `.json` para calcular áreas, longitudes, visualizar puntos en mapa y cruzar con capas de referencia.")
